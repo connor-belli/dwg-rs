@@ -1,3 +1,6 @@
+pub mod bitcodes;
+pub mod crc;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
