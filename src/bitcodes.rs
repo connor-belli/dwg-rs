@@ -6,7 +6,7 @@ pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
     cur_byte: u8,
     cur_bit: usize,
     iter: I,
-} 
+}
 
 impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     pub fn new(iter: I) -> Self {
@@ -16,7 +16,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
             cur_bit: 8,
         }
     }
- 
+
     /// Reads N bits to a usize and returns the results
     ///
     /// This will return None if there are less than N bits in the stream
@@ -26,10 +26,9 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         }
         // kind of redundant since bytes are 8 bits by default in rust
         const BITS_PER_BYTE: usize = 8;
-        
+
         assert!(size_of::<usize>() * BITS_PER_BYTE >= N);
         assert!(N > 0);
-
 
         let mut res: usize = 0;
         let mut n = N;
@@ -45,11 +44,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
                 }
             }
 
-            let bits_read = if n > rem_bits {
-                rem_bits
-            } else {
-                n
-            };
+            let bits_read = if n > rem_bits { rem_bits } else { n };
             let mask = (1 << bits_read) - 1;
             res |= (mask & (self.cur_byte >> self.cur_bit) as usize) << (N - n);
             n -= bits_read;
@@ -95,7 +90,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         // TODO: we don't need to use an arrayvec here
         let mut bytes: ArrayVec<u8, 8> = ArrayVec::new();
         loop {
-            let byte = self.read_bits::<8>()? as u8; 
+            let byte = self.read_bits::<8>()? as u8;
             bytes.push(byte & !(1 << 7));
             if byte & (1 << 7) == 0 {
                 break;
@@ -103,7 +98,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         }
         let mut res = 0i32;
         for (i, byte) in bytes.into_iter().enumerate() {
-            res |= (byte as i32) << (i*7); 
+            res |= (byte as i32) << (i * 7);
         }
         Some(res)
     }
