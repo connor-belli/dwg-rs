@@ -87,18 +87,15 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     }
 
     pub fn read_modular_char(&mut self) -> Option<i32> {
-        // TODO: we don't need to use an arrayvec here
-        let mut bytes: ArrayVec<u8, 8> = ArrayVec::new();
+        let mut res = 0i32;
+        let mut i = 0;
         loop {
             let byte = self.read_bits::<8>()? as u8;
-            bytes.push(byte & !(1 << 7));
+            res |= ((byte & !(1 << 7)) as i32) << (i * 7);
             if byte & (1 << 7) == 0 {
                 break;
             }
-        }
-        let mut res = 0i32;
-        for (i, byte) in bytes.into_iter().enumerate() {
-            res |= (byte as i32) << (i * 7);
+            i += 1;
         }
         Some(res)
     }
