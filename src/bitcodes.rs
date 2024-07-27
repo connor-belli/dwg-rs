@@ -1,5 +1,17 @@
+//! A struct to read DWG datatypes from a byte stream
+//!
+//! See chapter 2 of the ODS for details on the structure of the datatypes that can be read
+//!
+//! This module currently is fairly unoptimized; however, given the bitwise nature of DWGs,
+//! the API should stay the same and can't really be made any faster
 use std::mem::size_of;
 
+/// A structure that wraps a `Iterator<&u8>` that enables reading DWG datatypes from a byte stream
+///
+/// This struct does not allow for modification or writing of the DWG and instead will be
+/// performed by a future struct instead
+/// 
+/// This struct does no buffering and this functionality needs to be implemented from the iterator
 pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
     cur_byte: u8,
     cur_bit: u32,
@@ -7,6 +19,7 @@ pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
 }
 
 impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
+    /// Creates a new `BitReader` by wrapping an `Iterator<&u8>`
     pub fn new(iter: I) -> Self {
         Self {
             iter,
