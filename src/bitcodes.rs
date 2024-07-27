@@ -6,6 +6,8 @@
 //! the API should stay the same and can't really be made any faster
 use std::mem::size_of;
 
+use crate::version::DWGVersion;
+
 /// A structure that wraps a `Iterator<&u8>` that enables reading DWG datatypes from a byte stream
 ///
 /// This struct does not allow for modification or writing of the DWG and instead will be
@@ -16,16 +18,39 @@ pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
     cur_byte: u8,
     cur_bit: u32,
     iter: I,
+    version: DWGVersion,
 }
 
 impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     /// Creates a new `BitReader` by wrapping an `Iterator<&u8>`
+    /// 
+    /// Assumes a Version of AC1015 (R2000) initially  
     pub fn new(iter: I) -> Self {
         Self {
             iter,
             cur_byte: 0,
             cur_bit: 8,
+            version: DWGVersion::AC1015,
         }
+    }
+
+    pub fn get_version(&self) -> DWGVersion {
+        self.version
+    }
+
+    pub fn set_version(&mut self, version: DWGVersion) {
+        self.version = version
+    }
+
+    /// Read 6 byte magic number and return the DWG version 
+    /// 
+    /// This will not update the version of the reader automatically 
+    pub fn read_version(&mut self) -> Option<DWGVersion> {
+        let mut bytes = [0u8; 6];
+        for byte in bytes.iter_mut() {
+            *byte = self.read_bits::<8>()? as u8;
+        }
+        DWGVersion::from_magic(&bytes)
     }
 
     /// Reads N bits to a usize and returns the results
