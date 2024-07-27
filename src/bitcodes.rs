@@ -198,6 +198,21 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         let x2 = self.read_bits::<32>()? as u64;
         Some(f64::from_bits(x2 << 32 | x1))
     }
+
+    pub fn read_bit_extrusion(&mut self) -> Option<(f64, f64, f64)> {
+        if self.version >= DWGVersion::AC1015 {
+            // NOTE: ODS does not specifically say that post R16 versions use this method,
+            // only that R16 uses this method
+            let bit = self.read_bit()?;
+            if bit == 1 {
+                return Some((0.0, 0.0, 1.0))
+            }
+        }
+        let x1 = self.read_bitdouble()?;
+        let x2 = self.read_bitdouble()?;
+        let x3 = self.read_bitdouble()?;
+        Some((x1, x2, x3))
+    }
 }
 
 #[test]

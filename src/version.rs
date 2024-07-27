@@ -1,5 +1,5 @@
 #[derive(Clone, Copy, Debug)]
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum DWGVersion {
     AC1012, // R13
     AC1014, // R14
