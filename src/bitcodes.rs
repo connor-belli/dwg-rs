@@ -59,8 +59,34 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     pub fn read_bitshort(&mut self) -> Option<i16> {
         let flag = self.read_bits::<2>()?;
         match flag {
-            0x0 => self.read_bits::<16>().map(|x| x as i16),
+            0x0 => self.read_raw_short(), 
             0x1 => self.read_bits::<8>().map(|x| x as i16),
+            0x2 => Some(0),
+            0x3 => Some(256),
+            _ => unreachable!(),
+        }
+    }
+    
+    pub fn read_bitlong(&mut self) -> Option<i32> {
+        let flag = self.read_bits::<2>()?;
+        match flag {
+            0x0 => self.read_raw_long(), 
+            0x1 => self.read_bits::<8>().map(|x| x as i32),
+            0x2 => Some(0),
+            0x3 => Some(256),
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn read_bitlonglong(&mut self) -> Option<i64> {
+        let flag = self.read_bits::<2>()?;
+        match flag {
+            0x0 => {
+                let x1 = self.read_raw_long()? as u64;
+                let x2 = self.read_raw_long()? as u64;
+                Some((x2 << 32 | x1) as i64)
+            }, 
+            0x1 => self.read_bits::<8>().map(|x| x as i64),
             0x2 => Some(0),
             0x3 => Some(256),
             _ => unreachable!(),
