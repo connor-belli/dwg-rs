@@ -56,6 +56,18 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         self.read_bits::<1>().map(|x| x as u8)
     }
 
+    pub fn read_bit_triplet(&mut self) -> Option<u8> {
+        let mut byte = 0;
+        for _ in 0..3 {
+            let bit = self.read_bit()?;
+            byte = byte << 1 | bit;
+            if bit == 0 {
+                break;
+            }
+        }
+        Some(byte)
+    }
+
     pub fn read_bitshort(&mut self) -> Option<i16> {
         let flag = self.read_bits::<2>()?;
         match flag {
