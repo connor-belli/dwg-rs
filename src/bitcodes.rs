@@ -1,10 +1,8 @@
 use std::mem::size_of;
 
-use arrayvec::ArrayVec;
-
 pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
     cur_byte: u8,
-    cur_bit: usize,
+    cur_bit: u32,
     iter: I,
 }
 
@@ -20,17 +18,17 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     /// Reads N bits to a usize and returns the results
     ///
     /// This will return None if there are less than N bits in the stream
-    fn read_bits<const N: usize>(&mut self) -> Option<usize> {
+    fn read_bits<const N: u32>(&mut self) -> Option<u32> {
         if cfg!(target_endian = "big") {
             panic!("read_bits not supported for big endian architectures")
         }
         // kind of redundant since bytes are 8 bits by default in rust
-        const BITS_PER_BYTE: usize = 8;
+        const BITS_PER_BYTE: u32 = 8;
 
-        assert!(size_of::<usize>() * BITS_PER_BYTE >= N);
+        assert!(size_of::<u32>() * BITS_PER_BYTE as usize >= N as usize);
         assert!(N > 0);
 
-        let mut res: usize = 0;
+        let mut res: u32 = 0;
         let mut n = N;
         while n > 0 {
             let mut rem_bits = BITS_PER_BYTE - self.cur_bit;
@@ -46,7 +44,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
 
             let bits_read = if n > rem_bits { rem_bits } else { n };
             let mask = (1 << bits_read) - 1;
-            res |= (mask & (self.cur_byte >> self.cur_bit) as usize) << (N - n);
+            res |= (mask & (self.cur_byte >> self.cur_bit) as u32) << (N - n);
             n -= bits_read;
             self.cur_bit += bits_read;
         }
@@ -99,6 +97,20 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         }
         Some(res)
     }
+    
+    pub fn read_modular_short(&mut self) -> Option<i32> {
+        let mut res = 0i32;
+        let mut i = 0;
+        loop {
+            let byte = self.read_bits::<16>()? as u16;
+            res |= ((byte & !(1 << 15)) as i32) << (i * 15);
+            if byte & (1 << 15) == 0 {
+                break;
+            }
+            i += 1;
+        }
+        Some(res)
+    }
 }
 
 #[test]
@@ -118,4 +130,13 @@ fn test_read_modular_char() {
     let buf: [_; 2] = [0b10000010, 0b00100100];
     let mut reader = BitReader::new(buf.iter());
     assert_eq!(reader.read_modular_char(), Some(4610));
+}
+
+#[test]
+fn test_read_modular_short() {
+    // Opendesign specification example
+    // NOTE: First byte of example in PDF is wrong
+    let buf: [_; 4] = [0b00110001, 0b11110100, 0b10001101, 0b00000000];
+    let mut reader = BitReader::new(buf.iter());
+    assert_eq!(reader.read_modular_short(), Some(4650033));
 }
