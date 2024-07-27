@@ -70,14 +70,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     pub fn read_bitdouble(&mut self) -> Option<f64> {
         let flag = self.read_bits::<2>()?;
         match flag {
-            0x0 => {
-                // TODO: optimize
-                let mut bytes = [0; 8];
-                for byte in &mut bytes {
-                    *byte = self.read_bits::<8>()? as u8;
-                }
-                Some(f64::from_be_bytes(bytes))
-            }
+            0x0 => self.read_raw_double(),
             0x1 => Some(1.0),
             0x2 => Some(0.0),
             _ => unreachable!(),
@@ -97,7 +90,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         }
         Some(res)
     }
-    
+
     pub fn read_modular_short(&mut self) -> Option<i32> {
         let mut res = 0i32;
         let mut i = 0;
@@ -110,6 +103,24 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
             i += 1;
         }
         Some(res)
+    }
+
+    pub fn read_raw_char(&mut self) -> Option<i8> {
+        self.read_bits::<8>().map(|x| x as i8)
+    }
+
+    pub fn read_raw_short(&mut self) -> Option<i16> {
+        self.read_bits::<16>().map(|x| x as i16)
+    }
+
+    pub fn read_raw_long(&mut self) -> Option<i32> {
+        self.read_bits::<32>().map(|x| x as i32)
+    }
+
+    pub fn read_raw_double(&mut self) -> Option<f64> {
+        let x1 = self.read_bits::<32>()? as u64;
+        let x2 = self.read_bits::<32>()? as u64;
+        Some(f64::from_bits(x2 << 32 | x1))
     }
 }
 
