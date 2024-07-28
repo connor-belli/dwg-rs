@@ -213,6 +213,35 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         let x3 = self.read_bitdouble()?;
         Some((x1, x2, x3))
     }
+
+    pub fn read_bitdouble_with_default(&mut self) -> Option<f64> {
+        if self.version >= DWGVersion::AC1015 {
+            let bit = self.read_bit()?;
+            if bit == 1 {
+                return Some(0.0);
+            }
+        }
+        self.read_bitdouble()
+    }
+
+    pub fn read_cm_color_short(&mut self) -> Option<i16> {
+        self.read_bitshort()
+    } 
+
+    pub fn read_object_type(&mut self) -> Option<i16> {
+        if self.version <= DWGVersion::AC1021 {
+            self.read_bitshort()
+        } else {
+            let flags = self.read_bits::<2>()?;
+            match flags {
+                0x0 => self.read_raw_char().map(|x| x as i16), 
+                0x1 => self.read_raw_char().map(|x| x as i16 + 0x1f0), 
+                0x2 => self.read_raw_short(),
+                0x3 => self.read_raw_short(),
+                _ => unreachable!(),
+            }
+        }
+    }
 }
 
 #[test]
