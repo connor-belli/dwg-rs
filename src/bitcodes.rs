@@ -12,7 +12,7 @@ use crate::version::DWGVersion;
 ///
 /// This struct does not allow for modification or writing of the DWG and instead will be
 /// performed by a future struct instead
-/// 
+///
 /// This struct does no buffering and this functionality needs to be implemented from the iterator
 pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
     cur_byte: u8,
@@ -23,7 +23,7 @@ pub struct BitReader<'a, I: Iterator<Item = &'a u8>> {
 
 impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     /// Creates a new `BitReader` by wrapping an `Iterator<&u8>`
-    /// 
+    ///
     /// Assumes a Version of AC1015 (R2000) initially  
     pub fn new(iter: I) -> Self {
         Self {
@@ -42,9 +42,9 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         self.version = version
     }
 
-    /// Read 6 byte magic number and return the DWG version 
-    /// 
-    /// This will not update the version of the reader automatically 
+    /// Read 6 byte magic number and return the DWG version
+    ///
+    /// This will not update the version of the reader automatically
     pub fn read_version(&mut self) -> Option<DWGVersion> {
         let mut bytes = [0u8; 6];
         for byte in bytes.iter_mut() {
@@ -109,18 +109,18 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
     pub fn read_bitshort(&mut self) -> Option<i16> {
         let flag = self.read_bits::<2>()?;
         match flag {
-            0x0 => self.read_raw_short(), 
+            0x0 => self.read_raw_short(),
             0x1 => self.read_bits::<8>().map(|x| x as i16),
             0x2 => Some(0),
             0x3 => Some(256),
             _ => unreachable!(),
         }
     }
-    
+
     pub fn read_bitlong(&mut self) -> Option<i32> {
         let flag = self.read_bits::<2>()?;
         match flag {
-            0x0 => self.read_raw_long(), 
+            0x0 => self.read_raw_long(),
             0x1 => self.read_bits::<8>().map(|x| x as i32),
             0x2 => Some(0),
             0x3 => Some(256),
@@ -135,7 +135,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
                 let x1 = self.read_raw_long()? as u64;
                 let x2 = self.read_raw_long()? as u64;
                 Some((x2 << 32 | x1) as i64)
-            }, 
+            }
             0x1 => self.read_bits::<8>().map(|x| x as i64),
             0x2 => Some(0),
             0x3 => Some(256),
@@ -193,6 +193,12 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         self.read_bits::<32>().map(|x| x as i32)
     }
 
+    pub fn read_raw_longlong(&mut self) -> Option<i64> {
+        let x1 = self.read_bits::<32>()? as u64;
+        let x2 = self.read_bits::<32>()? as u64;
+        Some((x2 << 32 | x1) as i64)
+    }
+
     pub fn read_raw_double(&mut self) -> Option<f64> {
         let x1 = self.read_bits::<32>()? as u64;
         let x2 = self.read_bits::<32>()? as u64;
@@ -205,7 +211,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
             // only that R16 uses this method
             let bit = self.read_bit()?;
             if bit == 1 {
-                return Some((0.0, 0.0, 1.0))
+                return Some((0.0, 0.0, 1.0));
             }
         }
         let x1 = self.read_bitdouble()?;
@@ -226,7 +232,7 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
 
     pub fn read_cm_color_short(&mut self) -> Option<i16> {
         self.read_bitshort()
-    } 
+    }
 
     pub fn read_object_type(&mut self) -> Option<i16> {
         if self.version <= DWGVersion::AC1021 {
@@ -234,8 +240,8 @@ impl<'a, I: Iterator<Item = &'a u8>> BitReader<'a, I> {
         } else {
             let flags = self.read_bits::<2>()?;
             match flags {
-                0x0 => self.read_raw_char().map(|x| x as i16), 
-                0x1 => self.read_raw_char().map(|x| x as i16 + 0x1f0), 
+                0x0 => self.read_raw_char().map(|x| x as i16),
+                0x1 => self.read_raw_char().map(|x| x as i16 + 0x1f0),
                 0x2 => self.read_raw_short(),
                 0x3 => self.read_raw_short(),
                 _ => unreachable!(),
@@ -253,6 +259,28 @@ fn test_read_bits() {
     assert_eq!(reader.read_bits::<5>(), Some(0x1B));
     assert_eq!(reader.read_bits::<3>(), Some(0x5));
     assert_eq!(reader.read_bits::<1>(), None);
+}
+
+#[test]
+fn test_read_raw_long() {
+    let buf: [_; 4] = [0xFF, 0xFF, 0xFF, 0xFF];
+    let mut reader = BitReader::new(buf.iter());
+    assert_eq!(reader.read_raw_long(), Some(-1));
+
+    let buf: [_; 4] = [0x01, 0x00, 0x00, 0x00];
+    let mut reader = BitReader::new(buf.iter());
+    assert_eq!(reader.read_raw_long(), Some(1));
+}
+
+#[test]
+fn test_read_raw_longlong() {
+    let buf: [_; 8] = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+    let mut reader = BitReader::new(buf.iter());
+    assert_eq!(reader.read_raw_longlong(), Some(-1));
+
+    let buf: [_; 8] = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let mut reader = BitReader::new(buf.iter());
+    assert_eq!(reader.read_raw_longlong(), Some(1));
 }
 
 #[test]

@@ -37,22 +37,22 @@ pub enum CodePage {
     BIG5,
     CP949,
     JOHAB,
-    CP866, // Russian,
+    CP866,    // Russian,
     ANSI1250, // Windows Central
     ANSI1251, // Windows Cyrillic
     ANSI1252, // Windows Western European
-    GB2312, // Windows EUC-CN Chinese
+    GB2312,   // Windows EUC-CN Chinese
     ANSI1253, // Windows Greek
     ANSI1254, // Windows Turkish
     ANSI1255, // Windows Hebrew
     ANSI1256, // Windows Arabic
     ANSI1257, // Windows Baltic
-    ANSI874, // Windows Thai
-    ANSI932, // Windows Japanese
-    ANSI936, // Windows Simplified Chinese
-    ANSI949, // Windows Korean Wansung
-    ANSI950, // Windows Trad Chinese
+    ANSI874,  // Windows Thai
+    ANSI932,  // Windows Japanese
+    ANSI936,  // Windows Simplified Chinese
+    ANSI949,  // Windows Korean Wansung
+    ANSI950,  // Windows Trad Chinese
     ANSI1361, // Windows Korean Wansung
-    UTF16, // Default Since R2007
+    UTF16,    // Default Since R2007
     ANSI1258, // Windows Vietnamese
 }
